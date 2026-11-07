@@ -1,0 +1,97 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Seal ESS</title>
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Seal ESS">
+<meta name="theme-color" content="#0B0F14">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icon-180.png">
+<link rel="icon" href="icon-180.png">
+<style>
+  :root {
+    --bg: #0B0F14; --panel: #141B24; --line: #243041; --fg: #E8EDF3; --muted: #8C98A8;
+    --accent: #3DA5FF; --hot: #FF4D3D; --ok: #3DDC84; --warn: #F2A93B;
+    color-scheme: dark;
+  }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body { margin: 0; height: 100%; background: var(--bg); color: var(--fg);
+    font: 16px/1.4 -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", system-ui, sans-serif; }
+  body { padding: env(safe-area-inset-top) max(14px, env(safe-area-inset-right)) env(safe-area-inset-bottom) max(14px, env(safe-area-inset-left)); }
+  .app { max-width: 900px; margin: 0 auto; display: grid; gap: 12px; padding-block: 12px 28px; }
+  @media (orientation: landscape) and (min-width: 700px) { .app { grid-template-columns: 1.1fr 1fr; align-items: start; } .gaugebox { position: sticky; top: 12px; } }
+  .gaugebox { background: var(--panel); border-radius: 18px; padding: 8px; }
+  canvas { width: 100%; aspect-ratio: 1 / 0.92; display: block; }
+  .chips { display: flex; flex-wrap: wrap; gap: 6px; padding: 4px 6px 8px; }
+  .chip { font-size: 13px; padding: 4px 10px; border-radius: 99px; background: #1C2633; color: var(--muted); }
+  .chip.ok { color: var(--ok); } .chip.warn { color: var(--warn); } .chip.bad { color: var(--hot); }
+  .col { display: grid; gap: 12px; }
+  button { font: inherit; border: 0; cursor: pointer; }
+  #start { width: 100%; padding: 20px; border-radius: 16px; font-size: 22px; font-weight: 700; background: var(--accent); color: #fff; }
+  #start.on { background: var(--hot); }
+  .panel { background: var(--panel); border-radius: 16px; padding: 14px 16px; display: grid; gap: 10px; }
+  .panel h2 { margin: 0; font-size: 13px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
+  .engines { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; }
+  .engines button { padding: 14px 10px; border-radius: 12px; background: #1C2633; color: var(--fg); font-size: 16px; text-align: left; }
+  .engines button[aria-pressed="true"] { background: var(--accent); color: #fff; }
+  label.row { display: grid; gap: 6px; font-size: 15px; }
+  input[type=range] { width: 100%; height: 36px; accent-color: var(--accent); }
+  .switch { display: flex; justify-content: space-between; align-items: center; font-size: 16px; min-height: 44px; }
+  .switch input { width: 52px; height: 30px; accent-color: var(--accent); }
+  #hold { width: 100%; padding: 18px; border-radius: 14px; background: #2E7D32; color: #fff; font-size: 18px; font-weight: 600; user-select: none; -webkit-user-select: none; touch-action: none; }
+  #status { font-size: 14px; color: var(--muted); min-height: 1.4em; }
+  .help { font-size: 14px; color: var(--muted); display: grid; gap: 6px; }
+  .help p { margin: 0; }
+  [hidden] { display: none !important; }
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="gaugebox">
+    <canvas id="gauge" width="720" height="660" aria-label="Tachometer"></canvas>
+    <div class="chips" id="chips"></div>
+  </div>
+
+  <div class="col">
+    <button id="start" type="button">Start engine</button>
+    <div id="status">Tap Start, then allow Motion and Location.</div>
+
+    <div class="panel">
+      <h2>Engine</h2>
+      <div class="engines" id="engines"></div>
+    </div>
+
+    <div class="panel">
+      <h2>Sound</h2>
+      <label class="row">Volume <input type="range" id="volume" min="0" max="100"></label>
+      <label class="row">Aggressiveness (rasp, crackle, later shifts) <input type="range" id="aggr" min="0" max="100"></label>
+      <div class="switch"><span>Play together with music<br><small style="color:var(--muted)">Ringer must be on (silent switch off)</small></span><input type="checkbox" id="mix"></div>
+    </div>
+
+    <div class="panel">
+      <h2>Demo (parked)</h2>
+      <div class="switch"><span>Demo mode (on-screen pedal)</span><input type="checkbox" id="demo"></div>
+      <div id="demoControls" class="col" hidden>
+        <div class="switch"><span>Drive (off = Park, rev freely)</span><input type="checkbox" id="demoDrive"></div>
+        <label class="row">Pedal <input type="range" id="pedal" min="0" max="100" value="0"></label>
+        <button id="hold" type="button">Hold to floor it</button>
+      </div>
+      <button id="rev" type="button" class="chip" style="justify-self:start;padding:10px 14px;font-size:15px">Hold to rev (parked)</button>
+    </div>
+
+    <div class="panel help">
+      <h2>Tips</h2>
+      <p>Mount the phone so it can't slide around. The app learns which way is forward during your first few speed changes (the "Forward" chip turns green).</p>
+      <p>Keep this screen open on the phone. CarPlay can show Maps at the same time. If you switch apps or lock the phone, iOS pauses the sound (web apps can't run in the background).</p>
+      <p>Your real pedal can't be read without modifying the car, so the app estimates it from how the car accelerates.</p>
+    </div>
+  </div>
+</div>
+<script src="fusion.js"></script>
+<script src="app.js"></script>
+</body>
+</html>

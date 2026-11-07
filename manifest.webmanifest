@@ -1,0 +1,14 @@
+{
+  "name": "Seal ESS",
+  "short_name": "Seal ESS",
+  "description": "Engine sound simulator for the BYD Seal",
+  "start_url": "./",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#0B0F14",
+  "theme_color": "#0B0F14",
+  "icons": [
+    { "src": "icon-180.png", "sizes": "180x180", "type": "image/png" },
+    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png" }
+  ]
+}
